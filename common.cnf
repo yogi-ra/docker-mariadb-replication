@@ -1,0 +1,6 @@
+[mysqld]
+default_authentication_plugin=mysql_native_password
+bind-address = 0.0.0.0
+log_bin = binlog
+binlog_format = row
+auto_increment_increment=2

@@ -1,0 +1,61 @@
+services:
+  mariadb-a:
+    container_name: mariadb-a
+    image: mariadb:${MARIADB_VERSION:-latest}
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: mariadb-a-data
+        target: /var/lib/mysql
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./mariadb-a.cnf
+        target: /etc/mysql/conf.d/50-server.cnf
+      - type: bind
+        source: ./common.cnf
+        target: /etc/mysql/conf.d/51-common.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-password}
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: "mysqladmin ping --silent"
+      interval: 5s
+    networks:
+      - mariadb
+    mem_limit: 1G
+
+  mariadb-b:
+    container_name: mariadb-b
+    image: mariadb:${MARIADB_VERSION:-latest}
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: mariadb-b-data
+        target: /var/lib/mysql
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./mariadb-b.cnf
+        target: /etc/mysql/conf.d/50-server.cnf
+      - type: bind
+        source: ./common.cnf
+        target: /etc/mysql/conf.d/51-common.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-password}
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: "mysqladmin ping --silent"
+      interval: 5s
+    networks:
+      - mariadb
+    mem_limit: 1G
+
+volumes:
+  mariadb-a-data:
+  mariadb-b-data:
+
+networks:
+  mariadb:
