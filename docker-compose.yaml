@@ -23,7 +23,7 @@ services:
       MYSQL_PS1: "\\u@mariadb-a [\\d] "
       MARIADB_SERVER: a
     ports:
-      - "3306:3306"
+      - "${MARIADB_A_PORT:-13306}:3306"
     healthcheck:
       test: "mysqladmin ping --silent"
       interval: 5s
@@ -55,7 +55,7 @@ services:
       MYSQL_PS1: "\\u@mariadb-b [\\d] "
       MARIADB_SERVER: b
     ports:
-      - "3307:3306"
+      - "${MARIADB_B_PORT:-13307}:3306"
     healthcheck:
       test: "mysqladmin ping --silent"
       interval: 5s

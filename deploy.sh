@@ -27,11 +27,14 @@ get_master() {
     echo -n "$master"
 }
 
+: "${MARIADB_BASE_PORT:=13306}"
 start_servers() {
     export MARIADB_VERSION="${MARIADB_VERSION:-latest}"
     export MARIADB_ROOT_PASSWORD="${MARIADB_ROOT_PASSWORD:-password}"
     export MARIADB_REPLICATION_USER="${MARIADB_REPLICATION_USER:-replication-user}"
     export MARIADB_REPLICATION_PASSWORD="${MARIADB_REPLICATION_PASSWORD:-replication}"
+    export MARIADB_A_PORT="$MARIADB_BASE_PORT"
+    export MARIADB_B_PORT="$((MARIADB_BASE_PORT + 1))"
 
     docker compose up -d
 
@@ -156,7 +159,7 @@ SQL
 }
 
 case "$1" in
-    master-master) master-master;;
-    master-slave) master-slave;;
-    *) usage;;
+master-master) master-master ;;
+master-slave) master-slave ;;
+*) usage ;;
 esac
