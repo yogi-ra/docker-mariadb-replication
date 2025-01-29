@@ -22,7 +22,7 @@ get_master() {
     local IFS=$'\t'
     read -r _ master _ < <(
         docker exec "$1" \
-            mysql -NBu root --password="$MARIADB_ROOT_PASSWORD" '--execute=SHOW SLAVE STATUS'
+            mariadb -NBu root --password="$MARIADB_ROOT_PASSWORD" '--execute=SHOW SLAVE STATUS'
     )
     echo -n "$master"
 }
@@ -36,7 +36,7 @@ start_servers() {
     export MARIADB_A_PORT="$MARIADB_BASE_PORT"
     export MARIADB_B_PORT="$((MARIADB_BASE_PORT + 1))"
 
-    docker compose up -d
+    docker-compose up -d
 
     echo -n 'Waiting for containers to start .'
     wait_for_container mariadb-a
@@ -48,7 +48,7 @@ master-slave() {
 
     # Create user on master database.
     docker exec -i mariadb-a \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 CREATE USER IF NOT EXISTS
     '$MARIADB_REPLICATION_USER'@'%'
     IDENTIFIED BY '$MARIADB_REPLICATION_PASSWORD';
@@ -59,12 +59,12 @@ SQL
     # Get binlog name & position
     read -r log position _ < <(
         docker exec mariadb-a \
-            mysql -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
+            mariadb -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
     )
 
     # Connect slave to master
     docker exec -i mariadb-b \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 STOP SLAVE;
 RESET SLAVE;
 CHANGE MASTER TO
@@ -91,7 +91,7 @@ master-master() {
 
     # Create user on both databases
     docker exec -i mariadb-a \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 CREATE USER IF NOT EXISTS
     '$MARIADB_REPLICATION_USER'@'%'
     IDENTIFIED BY '$MARIADB_REPLICATION_PASSWORD';
@@ -100,7 +100,7 @@ FLUSH PRIVILEGES;
 SQL
 
     docker exec -i mariadb-b \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 CREATE USER IF NOT EXISTS
     '$MARIADB_REPLICATION_USER'@'%'
     IDENTIFIED BY '$MARIADB_REPLICATION_PASSWORD';
@@ -111,15 +111,15 @@ SQL
     # Get binlog name & position for both servers
     read -r a_log a_position _ < <(
         docker exec mariadb-a \
-            mysql -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
+            mariadb -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
     )
     read -r b_log b_position _ < <(
         docker exec mariadb-b \
-            mysql -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
+            mariadb -NBu root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW MASTER STATUS"
     )
 
     # Connect master-master
-    docker exec -i mariadb-b mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+    docker exec -i mariadb-b mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 STOP SLAVE;
 RESET SLAVE;
 CHANGE MASTER TO
@@ -131,7 +131,7 @@ CHANGE MASTER TO
 START SLAVE;
 SQL
 
-    docker exec -i mariadb-a mysql -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
+    docker exec -i mariadb-a mariadb -u root --password="$MARIADB_ROOT_PASSWORD" <<SQL
 STOP SLAVE;
 RESET SLAVE;
 CHANGE MASTER TO
@@ -146,9 +146,9 @@ SQL
     sleep 5
 
     docker exec mariadb-a \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW SLAVE STATUS \G"
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW SLAVE STATUS \G"
     docker exec mariadb-b \
-        mysql -u root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW SLAVE STATUS \G"
+        mariadb -u root --password="$MARIADB_ROOT_PASSWORD" --execute="SHOW SLAVE STATUS \G"
 
     if [[ "$(get_master mariadb-a)" == mariadb-b ]] && [[ "$(get_master mariadb-b)" == mariadb-a ]]; then
         echo
